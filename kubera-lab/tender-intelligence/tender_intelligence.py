@@ -4,6 +4,7 @@ import json
 import sys
 from dataclasses import dataclass, asdict
 from pathlib import Path
+from datetime import datetime, timezone
 from typing import Any
 
 
@@ -28,7 +29,20 @@ def _text(opportunity: dict[str, Any]) -> str:
     return " ".join(parts).lower()
 
 
-def score_opportunity(opportunity: dict[str, Any], profile: dict[str, Any]) -> TenderDecision:
+def _deadline_passed(deadline: Any, now: datetime | None = None) -> bool:
+    """True only when the deadline is a valid date-time that is already in the past."""
+    if not deadline:
+        return False
+    try:
+        target = datetime.fromisoformat(str(deadline).replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    if target.tzinfo is None:
+        target = target.replace(tzinfo=timezone.utc)
+    return target <= (now or datetime.now(timezone.utc))
+
+
+def score_opportunity(opportunity: dict[str, Any], profile: dict[str, Any], now: datetime | None = None) -> TenderDecision:
     corpus = _text(opportunity)
     score = 20
     matched: list[str] = []
@@ -77,6 +91,8 @@ def score_opportunity(opportunity: dict[str, Any], profile: dict[str, Any]) -> T
     if not opportunity.get("deadline"):
         score -= 8
         review_reasons.append("Missing deadline")
+    elif _deadline_passed(opportunity.get("deadline"), now):
+        blockers.append("Deadline has passed")
 
     score = max(0, min(100, score))
 

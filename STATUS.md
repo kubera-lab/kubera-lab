@@ -57,7 +57,7 @@ The audit prevents stale/unverified headline claims from returning and verifies 
 
 Migration/visa templates, learning repositories, small experiments and old utilities remain useful library material but are not the primary professional narrative.
 
-`kubera-learning.`, `ssh-check` and `kubera-local-ai2` should not be presented as flagship work.
+`kubera-learning`, `ssh-check` and `kubera-local-ai2` should not be presented as flagship work.
 
 ## Administrative cleanup still separate from code work
 

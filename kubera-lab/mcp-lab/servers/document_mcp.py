@@ -45,8 +45,9 @@ def find_exact_terms(text: str, terms: list[str]) -> dict:
         term = str(raw).strip()
         if not term or len(term) > 200:
             continue
-        starts = [m.start() for m in re.finditer(re.escape(term.lower()), lowered)][:100]
-        findings.append({"term": term, "count": len(starts), "positions": starts})
+        starts = [m.start() for m in re.finditer(re.escape(term.lower()), lowered)]
+        findings.append({"term": term, "count": len(starts), "positions": starts[:100],
+                         "positions_truncated": len(starts) > 100})
     return {"findings": findings}
 
 
@@ -57,7 +58,8 @@ def split_document_chunks(text: str, max_chars: int = 4000) -> dict:
     if not 500 <= max_chars <= 20_000:
         raise ValueError("max_chars must be between 500 and 20000")
     chunks = [content[i : i + max_chars] for i in range(0, len(content), max_chars)]
-    return {"chunk_count": len(chunks), "chunks": chunks[:200]}
+    return {"chunk_count": len(chunks), "returned_chunks": min(len(chunks), 200),
+            "truncated": len(chunks) > 200, "chunks": chunks[:200]}
 
 
 @mcp.resource("kubera://document/policy")

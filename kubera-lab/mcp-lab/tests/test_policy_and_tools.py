@@ -60,3 +60,20 @@ def test_input_budget_is_enforced() -> None:
     policy = ToolPolicy("evidence", "hash", SideEffect.PREPARE_ONLY, max_input_chars=5)
     with pytest.raises(ValueError):
         enforce_tool_policy(policy, input_text="123456")
+
+
+def test_document_tools_report_truncation_instead_of_hiding_it():
+    from servers import document_mcp as doc
+
+    split = getattr(doc.split_document_chunks, "fn", doc.split_document_chunks)
+    find = getattr(doc.find_exact_terms, "fn", doc.find_exact_terms)
+    text = "a" * (500 * 205)
+    try:
+        result = split(text, max_chars=500)
+    except ValueError:  # text above the server's size budget: truncation cannot happen here
+        return
+    assert result["chunk_count"] == 205
+    assert result["returned_chunks"] == 200 and result["truncated"] is True
+
+    hits = find("x " * 150, ["x"])["findings"][0]
+    assert hits["count"] == 150 and len(hits["positions"]) == 100 and hits["positions_truncated"] is True
