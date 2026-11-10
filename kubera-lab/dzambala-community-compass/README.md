@@ -7,11 +7,12 @@ A small, practical city-discovery prototype for finding **verified community, cu
 - switches between **London + Merton** and **Merton only**;
 - shows a verified **upcoming-event layer** from official/institutional sources;
 - filters events by **Today**, **Tomorrow**, **Weekend**, **Free only** and category;
+- hides ended events from the upcoming views and keeps them in an accessible **Past events (archive)** view;
 - links every event to the original source and records when it was checked;
 - keeps a separate verified-source directory with a transparent **Trust Score**;
 - plots sources and events that have known coordinates on an OpenStreetMap/Leaflet map;
 - validates event data, ISO timestamps, HTTPS provenance and deterministic duplicate fingerprints;
-- runs the validators and event tests in GitHub Actions.
+- runs the validators, event tests and date/archive tests in GitHub Actions.
 
 ## Event verification
 
@@ -27,6 +28,23 @@ Each event stores:
 - verification date and status.
 
 The browser marks an event as needing a recheck when its `checked_at` date is more than seven days old. That is a freshness warning, not a claim that the event is cancelled.
+
+## Event lifecycle and archive
+
+The page works out each event's lifecycle in the browser from its start/end time and the current London time (`compass-dates.js`):
+
+| Lifecycle | Meaning | Shown in |
+|---|---|---|
+| Upcoming | starts later | Upcoming, Today, Tomorrow, Weekend |
+| Happening now | started, not yet ended | Upcoming, Today (and Tomorrow/Weekend if it spans them) |
+| Past event | ended; kept as a historical record | Past events (archive) only |
+| Cancelled | the source itself reported a cancellation (`status: CANCELLED`) | Past events (archive) only |
+
+- An ended event is **never** labelled cancelled; that label needs the source to say so.
+- No record is deleted or rewritten when it ends: title, source link, organiser and verification date stay visible in the archive.
+- The archive is sorted newest first and has its own button, so it works by keyboard and screen reader.
+- When no upcoming event is listed, the page says so plainly, shows the date of the last check and links to the archive. It does not invent replacement events.
+- Verification freshness (`checked_at` older than seven days) is shown separately and does not change the lifecycle.
 
 ## Trust Score for source hubs
 
@@ -47,6 +65,7 @@ From this folder:
 python validate_data.py
 python validate_events.py
 python -m unittest -v test_events.py
+TZ=Europe/London node --test test_dates.test.js
 ```
 
 ## Run locally
@@ -59,4 +78,4 @@ Then open `http://localhost:8000`.
 
 ## Status
 
-`v0.2` implements a verified event layer and deterministic validation/deduplication. **Automatic event ingestion, automatic re-verification, personal profiles, AI ranking and notifications are not claimed as implemented yet.**
+`v0.2` implements a verified event layer, a past-events archive and deterministic validation/deduplication. **Automatic event ingestion, automatic re-verification, personal profiles, AI ranking and notifications are not claimed as implemented yet.**
