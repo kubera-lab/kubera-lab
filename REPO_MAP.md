@@ -1,12 +1,17 @@
 # KUBERA repository map
 
-Updated: **2026-10-02**
+Last reviewed: **2026-11-10**. Status and test evidence: `STATUS.md`, `EVIDENCE_MATRIX.md`.
 
 ## Public entry points
 
 1. **Profile / portfolio hub** — `kubera-lab/kubera-lab`
 2. **Reviewer route** — `PORTFOLIO_REVIEW.md`
 3. **KUBERA LAB index** — `kubera-lab/README.md`
+
+## Flagship product — KUBERA GEO SI
+Public showcase: [`kubera-lab/kubera-geoai`](https://github.com/kubera-lab/kubera-geoai) (live demo; application code is private).
+
+Role: evidence-first property facts for UK estate agents from open government data, with the source shown next to every figure.
 
 ## Priority architecture
 
@@ -77,7 +82,16 @@ Deterministic resident-language retrieval evaluation with regression tests and e
 ### Community Compass
 Path: `kubera-lab/dzambala-community-compass/`
 
-Local/event intelligence with source validation and provenance-oriented data handling.
+Local/event intelligence with source validation and provenance-oriented data handling. Ended events stay in a past-events archive; upcoming events are shown only when verified.
+
+### Kubera Agent Fabric
+Path: `research/kubera-agent-fabric/prototype/`
+
+Research prototype for local agents that answer area questions.
+
+## Repository guardrails
+- `tools/portfolio_audit.py` + `.github/workflows/portfolio-audit.yml` — headline-claim and evidence-path audit (path-filtered).
+- `.github/workflows/protected-paths.yml` + `.github/scripts/check_protected_paths.py` — flags any pull request that touches the root README or the frozen Kubera Guide folder (`kubera-lab/kubera-guide-global-mapping/`).
 
 ## Supporting / library repositories
 
