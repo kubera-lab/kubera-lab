@@ -83,7 +83,7 @@ A few concrete examples from the portfolio's documented engineering work — **n
 | :--- | :--- |
 | **KUBERA AGENT OS** | **173 tests passing** and **89% branch coverage** — re-run on 25 October 2026 (Python 3.13); CI matrix Python 3.11–3.13 · [Code](https://github.com/kubera-lab/kubera-lab/tree/main/kubera-lab/innovation-stack/reference-implementation) · [CI runs](https://github.com/kubera-lab/kubera-lab/actions/workflows/test-innovation-stack-reference.yml) |
 | **KUBERA TAO LAB** | **34/34 local project tests passed**, reported 2 October 2026; research and benchmark limitations documented · [Research dossier](kubera-lab/kubera-tao-lab/) |
-| **KUBERA GEO SI** | Live product on official open data (HM Land Registry, EPC, Environment Agency, Defra noise, OpenStreetMap); typed React + TypeScript app, unit and assistant tests, licence guard and automatic deployment after review · [Open live product](https://kubera-geoai.pages.dev) |
+| **KUBERA GEO SI** | Live product on official open data (HM Land Registry, EPC, Environment Agency, OpenStreetMap); typed React + TypeScript app, unit and assistant tests, licence guard and automatic deployment after review · [Open live product](https://kubera-geoai.pages.dev) |
 | **Tender Intelligence** | Documented read-only procurement research prototype with a human decision step · [Project details](kubera-lab/tender-intelligence/) |
 
 *Figures are dated. AGENT OS figures were re-run on the date shown; other figures are project-reported.*
