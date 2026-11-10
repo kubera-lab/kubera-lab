@@ -30,7 +30,7 @@ Summarised here; private run links are not used as reviewer dependencies and cou
 
 | Project | Status | What can be checked publicly | Not verified on 10 Nov 2026 |
 |---|---|---|---|
-| **KUBERA GEO SI** ([kubera-geoai](https://github.com/kubera-lab/kubera-geoai)) | Live demo; application code is private | Public showcase README and screenshots. Data sources named there: HM Land Registry, EPC, OS Open UPRN, Ofcom Connected Nations, Environment Agency flood data, Planning Data (MHCLG), UK House Price Index, OpenStreetMap | The live site could not be opened from the review environment. The profile README also lists **Defra noise**; this is not named in the public showcase and was not found in the code checked, so it needs owner confirmation. No air-quality data is claimed |
+| **KUBERA GEO SI** ([kubera-geoai](https://github.com/kubera-lab/kubera-geoai)) | Live demo; application code is private | Public showcase README and screenshots. Data sources named there: HM Land Registry, EPC, OS Open UPRN, Ofcom Connected Nations, Environment Agency flood data, Planning Data (MHCLG), UK House Price Index, OpenStreetMap | The live site could not be opened from the review environment. "Defra noise" was removed from the profile README on 10 Nov 2026 (owner decision) because it could not be confirmed. No air-quality data is claimed |
 
 ## Evidence policy
 

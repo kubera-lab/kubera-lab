@@ -48,7 +48,7 @@ Status: **early verified core / wider product bootstrap**. Production integratio
 ### Flagship product — KUBERA GEO SI
 Public showcase: `kubera-lab/kubera-geoai` (live demo; application code private).
 
-Status: **live demo / pilot area Mitcham (CR4)**. Data sources named in the public showcase: HM Land Registry, EPC, OS Open UPRN, Ofcom, Environment Agency flood data, Planning Data, UK HPI, OpenStreetMap. The profile README also lists Defra noise; that is not confirmed in the public showcase and needs owner confirmation. No air-quality data is claimed.
+Status: **live demo / pilot area Mitcham (CR4)**. Data sources named in the public showcase: HM Land Registry, EPC, OS Open UPRN, Ofcom, Environment Agency flood data, Planning Data, UK HPI, OpenStreetMap. "Defra noise" was removed from the profile README on 2026-11-10 because it could not be confirmed. No air-quality data is claimed.
 
 ### P2 — Applied proof
 - `kubera-lab/tender-intelligence/` — deterministic procurement qualification and DRAFT_ONLY bid support; **21 tests passed** on Python 3.11–3.13 on 2026-11-10 (was **16 tests passed** on 2026-10-02, before the closed-tender, currency and deadline fixes in PR #91/#94).
