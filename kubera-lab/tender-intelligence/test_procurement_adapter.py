@@ -79,6 +79,14 @@ class ProcurementAdapterTests(unittest.TestCase):
         self.assertIsNone(item.estimated_value_gbp)
         self.assertIsNone(item.currency)
 
+    def test_non_gbp_value_is_not_mislabeled_as_gbp_unrecognised_currency(self):
+        package = {"releases": [dict(PACKAGE["releases"][0])]}
+        package["releases"][0]["tender"] = dict(PACKAGE["releases"][0]["tender"])
+        package["releases"][0]["tender"]["value"] = {"amount": 100000, "currency": "XYZ"}
+        item = normalize_package(package, source="contracts_finder", source_url="https://example.test")[0]
+        self.assertIsNone(item.estimated_value_gbp)
+        self.assertEqual(item.currency, "XYZ")
+
     def test_evidence_record_is_minimal_and_traceable(self):
         item = normalize_package(PACKAGE, source="find_a_tender", source_url="https://example.test")[0]
         record = evidence_record(item)

@@ -29,17 +29,21 @@ def _text(opportunity: dict[str, Any]) -> str:
     return " ".join(parts).lower()
 
 
-def _deadline_passed(deadline: Any, now: datetime | None = None) -> bool:
-    """True only when the deadline is a valid date-time that is already in the past."""
+def _parse_deadline(deadline: Any) -> datetime | None:
+    """ISO date or date-time as an aware datetime (UTC when no zone); None when missing or malformed."""
     if not deadline:
-        return False
+        return None
     try:
         target = datetime.fromisoformat(str(deadline).replace("Z", "+00:00"))
     except ValueError:
-        return False
-    if target.tzinfo is None:
-        target = target.replace(tzinfo=timezone.utc)
-    return target <= (now or datetime.now(timezone.utc))
+        return None
+    return target if target.tzinfo else target.replace(tzinfo=timezone.utc)
+
+
+def _deadline_passed(deadline: Any, now: datetime | None = None) -> bool:
+    """True only when the deadline is a valid date-time that is already in the past."""
+    target = _parse_deadline(deadline)
+    return target is not None and target <= (now or datetime.now(timezone.utc))
 
 
 def score_opportunity(opportunity: dict[str, Any], profile: dict[str, Any], now: datetime | None = None) -> TenderDecision:
@@ -47,6 +51,7 @@ def score_opportunity(opportunity: dict[str, Any], profile: dict[str, Any], now:
     score = 20
     matched: list[str] = []
     blockers: list[str] = []
+    deadline_unreadable = False
     review_reasons: list[str] = []
 
     # Capability fit: bounded contribution so keyword stuffing cannot dominate.
@@ -91,6 +96,10 @@ def score_opportunity(opportunity: dict[str, Any], profile: dict[str, Any], now:
     if not opportunity.get("deadline"):
         score -= 8
         review_reasons.append("Missing deadline")
+    elif _parse_deadline(opportunity.get("deadline")) is None:
+        # Fail closed: a deadline we cannot read can never qualify as BID (capped at REVIEW below).
+        deadline_unreadable = True
+        review_reasons.append("Deadline is not a valid ISO date; confirm it before bidding")
     elif _deadline_passed(opportunity.get("deadline"), now):
         blockers.append("Deadline has passed")
 
@@ -98,7 +107,7 @@ def score_opportunity(opportunity: dict[str, Any], profile: dict[str, Any], now:
 
     if blockers:
         decision = "NO_BID"
-    elif score >= 65 and len(matched) >= 2:
+    elif score >= 65 and len(matched) >= 2 and not deadline_unreadable:
         decision = "BID"
     elif score >= 40:
         decision = "REVIEW"

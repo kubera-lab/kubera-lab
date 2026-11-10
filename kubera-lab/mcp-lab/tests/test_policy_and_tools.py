@@ -62,18 +62,48 @@ def test_input_budget_is_enforced() -> None:
         enforce_tool_policy(policy, input_text="123456")
 
 
-def test_document_tools_report_truncation_instead_of_hiding_it():
+def _doc_tools():
     from servers import document_mcp as doc
 
     split = getattr(doc.split_document_chunks, "fn", doc.split_document_chunks)
     find = getattr(doc.find_exact_terms, "fn", doc.find_exact_terms)
-    text = "a" * (500 * 205)
-    try:
-        result = split(text, max_chars=500)
-    except ValueError:  # text above the server's size budget: truncation cannot happen here
-        return
-    assert result["chunk_count"] == 205
-    assert result["returned_chunks"] == 200 and result["truncated"] is True
+    return split, find
 
-    hits = find("x " * 150, ["x"])["findings"][0]
-    assert hits["count"] == 150 and len(hits["positions"]) == 100 and hits["positions_truncated"] is True
+
+@pytest.mark.parametrize("chunks", [1, 199, 200])
+def test_split_document_chunks_not_truncated_up_to_200(chunks):
+    split, _ = _doc_tools()
+    text = "".join(chr(97 + i % 26) * 500 for i in range(chunks))
+    result = split(text, max_chars=500)
+    assert result["chunk_count"] == chunks
+    assert result["returned_chunks"] == chunks
+    assert result["truncated"] is False
+    assert "".join(result["chunks"]) == text  # nothing lost
+
+
+@pytest.mark.parametrize("chunks", [201, 400])
+def test_split_document_chunks_reports_truncation_above_200(chunks):
+    split, _ = _doc_tools()
+    text = "".join(chr(97 + i % 26) * 500 for i in range(chunks))
+    assert len(text) <= 200_000  # stays inside the server size budget, so truncation (not the budget) is tested
+    result = split(text, max_chars=500)
+    assert result["chunk_count"] == chunks
+    assert result["returned_chunks"] == 200
+    assert len(result["chunks"]) == 200
+    assert result["truncated"] is True
+    assert "".join(result["chunks"]) == text[: 200 * 500]  # the returned part is exact; the rest is flagged, not hidden
+
+
+def test_split_document_chunks_rejects_text_over_budget():
+    split, _ = _doc_tools()
+    with pytest.raises(ValueError):
+        split("a" * 200_001, max_chars=500)
+
+
+@pytest.mark.parametrize("occurrences, truncated", [(1, False), (100, False), (101, True), (150, True)])
+def test_find_exact_terms_full_count_and_truncation_flag(occurrences, truncated):
+    _, find = _doc_tools()
+    hit = find("x " * occurrences, ["x"])["findings"][0]
+    assert hit["count"] == occurrences
+    assert len(hit["positions"]) == min(occurrences, 100)
+    assert hit["positions_truncated"] is truncated
