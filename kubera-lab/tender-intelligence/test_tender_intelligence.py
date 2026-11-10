@@ -32,6 +32,22 @@ class TenderIntelligenceTests(unittest.TestCase):
         self.assertEqual(result.decision, "NO_BID")
         self.assertIn("Deadline has passed", result.blockers)
 
+    def test_malformed_deadline_never_qualifies_as_bid(self):
+        opportunity = json.loads((HERE / "example_opportunity.json").read_text(encoding="utf-8"))
+        for bad in ("next Friday", "05/10/2026", "2026-13-40"):
+            opportunity["deadline"] = bad
+            result = score_opportunity(opportunity, self.profile, now=BEFORE_DEADLINES)
+            self.assertNotEqual(result.decision, "BID", bad)
+            self.assertIn("Deadline is not a valid ISO date; confirm it before bidding", result.review_reasons)
+
+    def test_deadline_with_timezone_is_compared_as_a_moment(self):
+        opportunity = json.loads((HERE / "example_opportunity.json").read_text(encoding="utf-8"))
+        opportunity["deadline"] = "2026-10-05T12:00:00+01:00"  # 11:00 UTC
+        just_before = datetime(2026, 10, 5, 10, 59, tzinfo=timezone.utc)
+        just_after = datetime(2026, 10, 5, 11, 0, tzinfo=timezone.utc)
+        self.assertEqual(score_opportunity(opportunity, self.profile, now=just_before).decision, "BID")
+        self.assertEqual(score_opportunity(opportunity, self.profile, now=just_after).decision, "NO_BID")
+
     def test_hard_blocker_forces_no_bid(self):
         opportunity = {
             "notice_id": "BLOCK-1",
