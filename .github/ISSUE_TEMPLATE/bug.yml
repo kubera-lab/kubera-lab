@@ -1,0 +1,27 @@
+name: Bug report
+description: Сообщить о подтверждаемой ошибке в KUBERA
+title: "[BUG] "
+labels:
+  - type:bug
+body:
+  - type: textarea
+    id: broken
+    attributes:
+      label: Что сломалось
+      description: Кратко опишите проблему.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Как повторить
+      description: Дайте последовательные шаги для воспроизведения.
+    validations:
+      required: true
+  - type: textarea
+    id: expected_actual
+    attributes:
+      label: Ожидаемо / Фактически
+      description: Что должно было произойти и что произошло на самом деле?
+    validations:
+      required: true

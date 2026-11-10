@@ -11,6 +11,7 @@ This file is the concise operating guide for coding agents working in this repos
 - `kubera-lab/dzambala-community-compass/` — Community Compass project.
 - `kubera-lab/kubera-guide-global-mapping/` — frozen Kubera Guide project files.
 - `.github/workflows/` — CI and profile protection.
+- [WORKFLOW.md](WORKFLOW.md) — unified human-controlled workflow for ChatGPT, Claude, Copilot, Grok and Nikola.
 
 ## Commands
 

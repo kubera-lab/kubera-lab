@@ -1,0 +1,51 @@
+name: Unified Agent Workflow Check
+
+on:
+  # No paths filter: the frozen-path check must run on EVERY pull request,
+  # including one that changes only README.md or the Kubera Guide folder (issue #75).
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate issue forms
+        run: |
+          python -m pip install --disable-pip-version-check pyyaml
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+
+          root = Path('.github/ISSUE_TEMPLATE')
+          task = yaml.safe_load((root / 'task.yml').read_text(encoding='utf-8'))
+          bug = yaml.safe_load((root / 'bug.yml').read_text(encoding='utf-8'))
+          config = yaml.safe_load((root / 'config.yml').read_text(encoding='utf-8'))
+
+          assert config['blank_issues_enabled'] is False
+          assert [item.get('id') for item in task['body']] == ['goal', 'done', 'project', 'executor', 'protected']
+          assert [item.get('id') for item in bug['body']] == ['broken', 'reproduce', 'expected_actual']
+          assert task['body'][2]['attributes']['options'] == ['Agent OS', 'Real Estate OS', 'TAO Lab', 'Tender', 'Portfolio', 'Other']
+          assert task['body'][3]['attributes']['options'] == ['ChatGPT', 'Claude', 'Copilot', 'Nikola']
+          print('Issue forms: OK')
+          PY
+      - name: Protect frozen paths
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch origin "${{ github.base_ref }}" --depth=1
+          changed="$(git diff --name-only "origin/${{ github.base_ref }}"...HEAD)"
+          echo "$changed"
+          if echo "$changed" | grep -Eq '^(README\.md|kubera-lab/kubera-guide-global-mapping/)'; then
+            echo "Protected path changed."
+            exit 1
+          fi

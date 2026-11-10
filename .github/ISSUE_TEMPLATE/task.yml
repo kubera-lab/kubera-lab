@@ -1,0 +1,54 @@
+name: Task
+description: Управляемая задача KUBERA для человека или ИИ-агента
+title: "[TASK] "
+labels:
+  - type:task
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Цель
+      description: Что должно получиться в итоге?
+      placeholder: Опишите конечный результат.
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Критерий готовности
+      description: Как проверить, что задача действительно завершена?
+      placeholder: Тесты, ссылка, команда, наблюдаемый результат.
+    validations:
+      required: true
+  - type: dropdown
+    id: project
+    attributes:
+      label: Проект
+      options:
+        - Agent OS
+        - Real Estate OS
+        - TAO Lab
+        - Tender
+        - Portfolio
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: executor
+    attributes:
+      label: Исполнитель
+      options:
+        - ChatGPT
+        - Claude
+        - Copilot
+        - Nikola
+    validations:
+      required: true
+  - type: textarea
+    id: protected
+    attributes:
+      label: Что НЕЛЬЗЯ трогать
+      description: Перечислите файлы, папки, настройки или действия, которые запрещены.
+      placeholder: "Например: root README.md, kubera-lab/kubera-guide-global-mapping/, секреты, merge."
+    validations:
+      required: true
