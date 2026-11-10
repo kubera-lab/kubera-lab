@@ -91,7 +91,7 @@ function upcomingWeekend(now){const day=now.getDay();const daysUntilSaturday=(6-
 function eventDateMatches(item,now){
   const start=new Date(item.start),end=new Date(item.end);
   if(timeMode==='upcoming')return end>=now;
-  if(timeMode==='today')return sameDay(start,now)|| (start<=now&&end>=now);
+  if(timeMode==='today')return end>=now&&start<startOfDay(addDays(now,1));
   if(timeMode==='tomorrow'){const t=addDays(now,1);return sameDay(start,t)||(start<=t&&end>=startOfDay(t));}
   if(timeMode==='weekend'){const [sat,mon]=upcomingWeekend(now);return end>=sat&&start<mon;}
   return true;

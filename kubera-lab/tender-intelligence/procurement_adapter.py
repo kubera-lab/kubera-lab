@@ -211,7 +211,7 @@ def normalize_release(release: dict[str, Any], *, source: str, source_url: str) 
         buyer=_buyer_name(release),
         published_date=str(release.get("date")) if release.get("date") else None,
         deadline=str(tender.get("tenderPeriod", {}).get("endDate")) if tender.get("tenderPeriod", {}).get("endDate") else None,
-        estimated_value_gbp=amount if currency in (None, "GBP") else None,
+        estimated_value_gbp=amount if currency == "GBP" else None,
         currency=currency,
         requirements=_requirements(release),
         tags=_tags(release),
