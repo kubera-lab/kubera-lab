@@ -1,13 +1,9 @@
 name: Unified Agent Workflow Check
 
 on:
+  # No paths filter: the frozen-path check must run on EVERY pull request,
+  # including one that changes only README.md or the Kubera Guide folder (issue #75).
   pull_request:
-    paths:
-      - ".github/ISSUE_TEMPLATE/**"
-      - ".github/pull_request_template.md"
-      - ".github/workflows/unified-agent-workflow.yml"
-      - "AGENTS.md"
-      - "WORKFLOW.md"
   workflow_dispatch:
 
 permissions:
