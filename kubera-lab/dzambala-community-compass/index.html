@@ -10,7 +10,7 @@
     :root{font-family:Inter,system-ui,Arial,sans-serif;background:#f5f5f2;color:#111}
     *{box-sizing:border-box}body{margin:0}.wrap{max-width:1200px;margin:auto;padding:24px}.hero{padding:34px 0 18px}.hero h1{font-size:clamp(2rem,5vw,4rem);margin:0 0 8px}.hero p{max-width:820px;font-size:1.05rem;line-height:1.55;color:#444}
     .controls{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}.controls button,.controls select{border:1px solid #bbb;background:white;padding:10px 14px;border-radius:999px;font:inherit;cursor:pointer}.controls button.active{background:#111;color:white;border-color:#111}.controls label{display:inline-flex;align-items:center;gap:7px;background:white;border:1px solid #bbb;border-radius:999px;padding:9px 13px;cursor:pointer}
-    .status{display:flex;gap:12px;flex-wrap:wrap;margin:10px 0 22px;color:#555}.pill{background:white;border:1px solid #ddd;border-radius:999px;padding:7px 10px}.fresh{font-weight:700}.stale{font-weight:700;color:#8a4b00}.cancelled{font-weight:700;color:#8b0000}
+    .status{display:flex;gap:12px;flex-wrap:wrap;margin:10px 0 22px;color:#555}.pill{background:white;border:1px solid #ddd;border-radius:999px;padding:7px 10px}.fresh{font-weight:700}.stale{font-weight:700;color:#8a4b00}.cancelled{font-weight:700;color:#8b0000}.past{font-weight:700;color:#555}.card-past{opacity:.85;border-style:dashed}.linklike{background:none;border:0;padding:0;color:#0645ad;text-decoration:underline;cursor:pointer;font:inherit}
     .grid{display:grid;grid-template-columns:1.08fr .92fr;gap:18px}.panel{background:white;border:1px solid #ddd;border-radius:18px;overflow:hidden}.panel h2{padding:18px 18px 0;margin:0}.panel-note{padding:6px 18px 0;color:#666;font-size:.92rem}.list{padding:12px 18px 18px;display:grid;gap:12px}.card{border:1px solid #e0e0e0;border-radius:14px;padding:15px}.card h3{margin:0 0 7px}.meta{font-size:.9rem;color:#666;line-height:1.45}.card p{line-height:1.45;color:#333;margin:9px 0}.card a{color:#111;font-weight:700}.tag{display:inline-block;border:1px solid #ddd;border-radius:999px;padding:3px 8px;margin:3px 4px 0 0;font-size:.82rem}.trust{font-weight:700}#map{height:650px}.empty{padding:20px;color:#666}.sources{margin-top:18px}.source-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:12px 18px 18px}
     @media(max-width:850px){.grid{grid-template-columns:1fr}#map{height:420px}.source-grid{grid-template-columns:1fr}}
   </style>
@@ -42,6 +42,7 @@
     <button class="time" data-time="today">Today</button>
     <button class="time" data-time="tomorrow">Tomorrow</button>
     <button class="time" data-time="weekend">Weekend</button>
+    <button class="time" data-time="archive">Past events (archive)</button>
     <label><input type="checkbox" id="freeOnly" /> Free only</label>
   </div>
 
@@ -53,8 +54,8 @@
 
   <div class="grid">
     <section class="panel">
-      <h2>Verified upcoming events</h2>
-      <div class="panel-note">Every event links back to its original source. A recheck warning appears after 7 days.</div>
+      <h2 id="eventHeading">Verified upcoming events</h2>
+      <div class="panel-note" id="eventNote">Every event links back to its original source. A recheck warning appears after 7 days.</div>
       <div id="eventList" class="list"></div>
     </section>
     <section class="panel"><div id="map"></div></section>
@@ -68,7 +69,11 @@
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="./compass-dates.js"></script>
 <script>
+const D=window.CompassDates;
+const eventHeading=document.getElementById('eventHeading');
+const eventNote=document.getElementById('eventNote');
 const eventList=document.getElementById('eventList');
 const sourceList=document.getElementById('sourceList');
 const eventCount=document.getElementById('eventCount');
@@ -84,18 +89,6 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,att
 
 function esc(value){return String(value??'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));}
 function score(item){const t=item.trust;return t.authority+t.freshness+t.direct_link+t.local_relevance;}
-function startOfDay(d){const x=new Date(d);x.setHours(0,0,0,0);return x;}
-function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x;}
-function sameDay(a,b){return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();}
-function upcomingWeekend(now){const day=now.getDay();const daysUntilSaturday=(6-day+7)%7;const saturday=startOfDay(addDays(now,daysUntilSaturday));const monday=startOfDay(addDays(saturday,2));return [saturday,monday];}
-function eventDateMatches(item,now){
-  const start=new Date(item.start),end=new Date(item.end);
-  if(timeMode==='upcoming')return end>=now;
-  if(timeMode==='today')return end>=now&&start<startOfDay(addDays(now,1));
-  if(timeMode==='tomorrow'){const t=addDays(now,1);return sameDay(start,t)||(start<=t&&end>=startOfDay(t));}
-  if(timeMode==='weekend'){const [sat,mon]=upcomingWeekend(now);return end>=sat&&start<mon;}
-  return true;
-}
 function formatDate(item){
   const start=new Date(item.start),end=new Date(item.end);
   const dateFmt=new Intl.DateTimeFormat('en-GB',{weekday:'short',day:'numeric',month:'short'});
@@ -103,29 +96,50 @@ function formatDate(item){
   if(start.toDateString()===end.toDateString())return `${dateFmt.format(start)} · ${timeFmt.format(start)}–${timeFmt.format(end)}`;
   return `${dateFmt.format(start)} → ${dateFmt.format(end)}`;
 }
+function lifecycleLabel(item,now){
+  const state=D.lifecycle(item,now);
+  if(state==='cancelled')return ['Cancelled (reported by the source)','cancelled'];
+  if(state==='past')return [`Past event · ended ${new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'short',year:'numeric'}).format(new Date(item.end))} · historical record`,'past'];
+  if(state==='ongoing')return ['Happening now','fresh'];
+  return ['Upcoming','fresh'];
+}
 function freshness(item,now){
-  const checked=new Date(`${item.checked_at}T00:00:00`);
-  const age=Math.floor((startOfDay(now)-checked)/86400000);
-  if(item.status==='CANCELLED')return ['Cancelled','cancelled'];
-  if(age>7)return [`Needs recheck · checked ${item.checked_at}`,'stale'];
+  const v=D.verification(item,now);
+  if(v.stale)return [`Needs recheck · checked ${item.checked_at}`,'stale'];
   return [`Verified ${item.checked_at}`,'fresh'];
+}
+function emptyMessage(now){
+  if(timeMode==='archive')return 'No past events match this filter.';
+  const past=events.filter(x=>D.lifecycle(x,now)==='past').length;
+  const last=D.lastChecked(events);
+  return `No verified ${timeMode==='upcoming'?'upcoming':timeMode} events match this filter.`+
+    (last?` The event list was last checked against its sources on ${esc(last)}; nothing newer has been verified yet.`:'')+
+    (past?` ${past} past event${past===1?' is':'s are'} kept in <button class="linklike" data-goto="archive">Past events (archive)</button>.`:'');
 }
 function render(){
   const now=new Date();
   markers.forEach(m=>map.removeLayer(m));markers=[];
-  const eventFiltered=events.filter(x=>x.status!=='CANCELLED')
+  const eventFiltered=D.sortForView(events
     .filter(x=>(area==='all'||x.area==='Merton'))
     .filter(x=>(category.value==='all'||x.category===category.value))
     .filter(x=>(!freeOnly.checked||x.price_type==='FREE'))
-    .filter(x=>eventDateMatches(x,now))
-    .sort((a,b)=>new Date(a.start)-new Date(b.start));
+    .filter(x=>D.matchesTime(x,timeMode,now)),timeMode);
+  eventHeading.textContent=timeMode==='archive'?'Past events (archive)':'Verified upcoming events';
+  eventNote.textContent=timeMode==='archive'
+    ?'Historical records, newest first. Kept with their original sources and dates; they are not current listings.'
+    :'Every event links back to its original source. A recheck warning appears after 7 days.';
   eventCount.textContent=`${eventFiltered.length} event${eventFiltered.length===1?'':'s'}`;
   eventList.innerHTML='';
-  if(!eventFiltered.length)eventList.innerHTML='<div class="empty">No verified events match this filter.</div>';
+  if(!eventFiltered.length){
+    eventList.innerHTML=`<div class="empty">${emptyMessage(now)}</div>`;
+    const go=eventList.querySelector('[data-goto]');
+    if(go)go.onclick=()=>timeButtons.find(b=>b.dataset.time==='archive').click();
+  }
   eventFiltered.forEach(item=>{
     const [freshText,freshClass]=freshness(item,now);
-    const card=document.createElement('article');card.className='card';
-    card.innerHTML=`<h3>${esc(item.title)}</h3><div class="meta">${esc(formatDate(item))}</div><p>${esc(item.venue)}<br>${esc(item.address)}</p><div><span class="tag">${esc(item.area)}</span><span class="tag">${esc(item.category)}</span><span class="tag">${esc(item.price_text)}</span></div><p class="meta">Organiser: ${esc(item.organiser)}<br><span class="${freshClass}">${esc(freshText)}</span> · ${esc(item.source_type)}</p><p><a href="${esc(item.source_url)}" target="_blank" rel="noopener">Open original event source ↗</a></p>`;
+    const [stateText,stateClass]=lifecycleLabel(item,now);
+    const card=document.createElement('article');card.className='card'+(stateClass==='past'||stateClass==='cancelled'?' card-past':'');
+    card.innerHTML=`<h3>${esc(item.title)}</h3><div class="meta">${esc(formatDate(item))}</div><p>${esc(item.venue)}<br>${esc(item.address)}</p><div><span class="tag">${esc(item.area)}</span><span class="tag">${esc(item.category)}</span><span class="tag">${esc(item.price_text)}</span></div><p class="meta"><span class="${stateClass}">${esc(stateText)}</span></p><p class="meta">Organiser: ${esc(item.organiser)}<br><span class="${freshClass}">${esc(freshText)}</span> · ${esc(item.source_type)}</p><p><a href="${esc(item.source_url)}" target="_blank" rel="noopener">Open original event source ↗</a></p>`;
     eventList.appendChild(card);
     if(Number.isFinite(item.lat)&&Number.isFinite(item.lon)){
       const marker=L.circleMarker([item.lat,item.lon],{radius:8}).addTo(map).bindPopup(`<strong>${esc(item.title)}</strong><br>${esc(formatDate(item))}`);markers.push(marker);
