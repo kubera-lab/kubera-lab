@@ -1,0 +1,47 @@
+name: Protected Paths
+
+# Issue #75 / #93. Fails any pull request that touches the root profile README
+# or the frozen kubera-lab/kubera-guide-global-mapping/ folder.
+#
+# Why pull_request_target: the workflow file and the checker script are always
+# taken from the BASE branch (main), so a pull request cannot switch the check
+# off by editing this file, adding a paths filter or changing the script.
+# Safe because no code from the pull request is checked out or executed:
+# the changed-file list comes from the GitHub API and is only read as JSON.
+#
+# No paths filter on purpose: it must run on every pull request, including one
+# that changes only a protected path.
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, edited, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: protected-paths-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  protected-paths:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out base branch only (never the PR head)
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: List changed files (GitHub API, includes old names of renames)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: gh api --paginate --slurp "repos/$REPO/pulls/$PR/files?per_page=100" > "$RUNNER_TEMP/files.json"
+      - name: Fail if a protected path changed
+        env:
+          EXPECTED: ${{ github.event.pull_request.changed_files }}
+        run: python3 .github/scripts/check_protected_paths.py "$RUNNER_TEMP/files.json" --expected "$EXPECTED"
