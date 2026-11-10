@@ -1,0 +1,41 @@
+name: Protected Paths Self-test
+
+# Tests the checker with synthetic changed-file cases, and runs it once
+# (report only) against this pull request's real file list.
+
+on:
+  pull_request:
+    paths:
+      - '.github/scripts/**'
+      - '.github/workflows/protected-paths*.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/scripts/**'
+      - '.github/workflows/protected-paths*.yml'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  selftest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Synthetic cases
+        working-directory: .github/scripts
+        run: python3 -m unittest -v test_check_protected_paths.py
+      - name: Dry run on this pull request
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          EXPECTED: ${{ github.event.pull_request.changed_files }}
+        run: |
+          gh api --paginate --slurp "repos/$REPO/pulls/$PR/files?per_page=100" > "$RUNNER_TEMP/files.json"
+          python3 .github/scripts/check_protected_paths.py "$RUNNER_TEMP/files.json" --expected "$EXPECTED"
